@@ -12,9 +12,10 @@ namespace UnityExtractor
     {
         static void Main(string[] args)
         {
-            foreach (var file in Directory.GetFiles("C:/unity_furni/", "*"))
+            foreach (var file in Directory.GetFiles(@"C:\Users\Alex\Documents\Habbo Furni\gamedata-2020-14-12\unity_furni", "*"))
             {
                 AssetBundle assetBundle = null;
+                string sprite = Path.GetFileNameWithoutExtension(file);
 
                 var assetsManager = new AssetsManager();
                 assetsManager.LoadFiles(file);
@@ -47,7 +48,21 @@ namespace UnityExtractor
                         if (container != null)
                             assetItem.Container = container.Item1;
 
-                        Exporter.ExportConvertFile(assetItem, "export/" + Path.GetFileNameWithoutExtension(file));
+                        if (assetItem.Container != null)
+                        {
+                            var data = assetItem.Container.Replace("assets/live/" + sprite + "/flash/", "").Split('/');
+
+                            if (data.Length == 2)
+                                assetItem.Sprite = data[0];
+                            else
+                                assetItem.Sprite = sprite;
+                        }
+                        else
+                        {
+                            assetItem.Sprite = sprite;
+                        }
+
+                        Exporter.ExportConvertFile(assetItem, "export/" + assetItem.Sprite);
                     }
                 }
             }
@@ -160,7 +175,7 @@ namespace UnityExtractor
         public ClassIDType Type;
         public string InfoText;
         public string UniqueID;
-        public string FileName;
+        public string Sprite;
         public string AssetName;
 
         public AssetItem(AssetStudio.Object asset)
