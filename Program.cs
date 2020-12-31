@@ -12,40 +12,43 @@ namespace UnityExtractor
     {
         static void Main(string[] args)
         {
-            AssetBundle assetBundle = null;
-
-            var assetsManager = new AssetsManager();
-            assetsManager.LoadFiles(@"C:\Users\Alex\Documents\GitHub\UnityExtractor\bin\Debug\net5.0\ads_711.unity");
-
-            // Find asset bundle first
-            foreach (var file in assetsManager.assetsFileList)
+            foreach (var file in Directory.GetFiles("C:/unity_furni/", "*"))
             {
-                foreach (var obj in file.Objects)
+                AssetBundle assetBundle = null;
+
+                var assetsManager = new AssetsManager();
+                assetsManager.LoadFiles(file);
+
+                // Find asset bundle first
+                foreach (var asset in assetsManager.assetsFileList)
                 {
-                    if (obj is AssetBundle rm)
-                        assetBundle = rm;
+                    foreach (var obj in asset.Objects)
+                    {
+                        if (obj is AssetBundle rm)
+                            assetBundle = rm;
+                    }
                 }
-            }
 
-            // Extract assets
-            foreach (var file in assetsManager.assetsFileList)
-            {
-                foreach (var obj in file.Objects)
+                // Extract assets
+                foreach (var asset in assetsManager.assetsFileList)
                 {
-                    var name = Path.GetRandomFileName();
+                    foreach (var obj in asset.Objects)
+                    {
+                        var name = Path.GetRandomFileName();
 
-                    if (obj is NamedObject namedObject)
-                        name = namedObject.m_Name;
+                        if (obj is NamedObject namedObject)
+                            name = namedObject.m_Name;
 
-                    var asset = new AssetItem(obj);
-                    asset.AssetName = name;
+                        var assetItem = new AssetItem(obj);
+                        assetItem.AssetName = name;
 
-                    var container = assetBundle.m_Container.Where(x => Path.GetFileNameWithoutExtension(x.Key) == name).Select(x => Tuple.Create(x.Key, x.Value)).FirstOrDefault();
+                        var container = assetBundle.m_Container.Where(x => Path.GetFileNameWithoutExtension(x.Key) == name).Select(x => Tuple.Create(x.Key, x.Value)).FirstOrDefault();
 
-                    if (container != null)
-                        asset.Container = container.Item1;
+                        if (container != null)
+                            assetItem.Container = container.Item1;
 
-                    Exporter.ExportConvertFile(asset, "export");
+                        Exporter.ExportConvertFile(assetItem, "export/" + Path.GetFileNameWithoutExtension(file));
+                    }
                 }
             }
 
