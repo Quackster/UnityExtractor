@@ -10,3 +10,4 @@ obj/
 packages/
 *.v2
 .vs/UnityExtractor/v16/.suo
+*.json

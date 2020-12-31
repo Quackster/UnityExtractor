@@ -5,17 +5,24 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Xml;
 
 namespace UnityExtractor
 {
     class Program
     {
+        private static readonly string EXPORT_DIRECTORY = "export";
+
         static void Main(string[] args)
         {
-            foreach (var file in Directory.GetFiles(@"C:\Users\Alex\Documents\Habbo Furni\gamedata-2020-14-12\unity_furni", "*"))
+            foreach (var file in Directory.GetFiles(args[0], "*"))
             {
-                AssetBundle assetBundle = null;
                 string sprite = Path.GetFileNameWithoutExtension(file);
+
+                if (Directory.Exists(Path.Combine(EXPORT_DIRECTORY, sprite)))
+                    continue;
+
+                AssetBundle assetBundle = null;
 
                 var assetsManager = new AssetsManager();
                 assetsManager.LoadFiles(file);
@@ -65,13 +72,84 @@ namespace UnityExtractor
                             assetItem.Sprite = sprite;
                         }
 
-                        Exporter.ExportConvertFile(assetItem, "export/" + assetItem.Sprite);
+                        Exporter.ExportConvertFile(assetItem, Path.Combine(EXPORT_DIRECTORY, assetItem.Sprite));
                     }
                 }
             }
 
+            foreach (var file in Directory.GetFiles(args[0], "*"))
+            {
+                string sprite = Path.GetFileNameWithoutExtension(file);
+                CopyXMLFiles(sprite);
+            }
+
             Console.WriteLine("Done!");
             Console.Read();
+        }
+
+        private static void CopyXMLFiles(string sprite)
+        {
+            var spriteXmlPath = Path.Combine(EXPORT_DIRECTORY, sprite, sprite + ".xml");
+
+            if (!File.Exists(spriteXmlPath))
+            {
+                return;
+            }
+
+            var spriteXml = Utilities.GetXmlFile(spriteXmlPath);
+            var fileContents = File.ReadAllText(spriteXmlPath);
+
+            if (spriteXml == null)
+            {
+                return;
+            }
+            
+            var aliases = new List<string>();
+            var aliasesNodes = spriteXml.SelectNodes("//hofdata/aliasdata/alias");
+
+            if (aliasesNodes.Count > 0)
+            {
+                for (int i = 0; i < aliasesNodes.Count; i++)
+                {
+                    var alias = aliasesNodes.Item(i);
+                    aliases.Add(alias.Attributes.GetNamedItem("name").InnerText);
+                }
+            }
+
+            foreach (var alias in aliases)
+            {
+                var aliasFileContents = fileContents.Replace(sprite, alias);
+
+                XmlDocument assetXml = new XmlDocument();
+                assetXml.LoadXml(aliasFileContents);
+                assetXml.SelectSingleNode("//hofdata/aliasdata").RemoveAll();
+                var newPath = Path.Combine(EXPORT_DIRECTORY, alias, alias + ".xml");
+                assetXml.Save(newPath);
+
+                var indexPath = Path.Combine(EXPORT_DIRECTORY, sprite, "index.xml");
+
+                if (File.Exists(indexPath))
+                {
+                    var indexContents = File.ReadAllText(indexPath);
+                    indexContents = indexContents.Replace(sprite, alias);
+                    newPath = Path.Combine(EXPORT_DIRECTORY, alias, "index.xml");
+                    File.WriteAllText(newPath, indexContents);
+                }
+
+                var manifestPath = Path.Combine(EXPORT_DIRECTORY, sprite, "manifest.xml");
+
+                if (File.Exists(manifestPath))
+                {
+                    var manifestContents = File.ReadAllText(manifestPath);
+                    manifestContents = manifestContents.Replace(alias, sprite);
+                    newPath = Path.Combine(EXPORT_DIRECTORY, sprite, "manifest.xml");
+                    File.WriteAllText(newPath, manifestContents);
+
+                    manifestContents = manifestContents.Replace(sprite, alias);
+                    newPath = Path.Combine(EXPORT_DIRECTORY, alias, "manifest.xml");
+                    File.WriteAllText(newPath, manifestContents);
+                }
+            }
         }
     }
 
