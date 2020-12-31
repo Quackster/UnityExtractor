@@ -15,6 +15,8 @@ namespace UnityExtractor
 
         static void Main(string[] args)
         {
+            File.WriteAllText("alias.txt", "");
+
             foreach (var file in Directory.GetFiles(args[0], "*"))
             {
                 string sprite = Path.GetFileNameWithoutExtension(file);
@@ -118,6 +120,7 @@ namespace UnityExtractor
 
             foreach (var alias in aliases)
             {
+                File.AppendAllText("alias.txt", alias + " =  " + sprite + "\r\n");
                 var aliasFileContents = fileContents.Replace(sprite, alias);
 
                 XmlDocument assetXml = new XmlDocument();
