@@ -26,7 +26,10 @@ namespace UnityExtractor
                     foreach (var obj in asset.Objects)
                     {
                         if (obj is AssetBundle rm)
+                        {
                             assetBundle = rm;
+                            continue;
+                        }
                     }
                 }
 
