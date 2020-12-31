@@ -131,6 +131,10 @@ namespace UnityExtractor
                 if (File.Exists(indexPath))
                 {
                     var indexContents = File.ReadAllText(indexPath);
+                    indexContents = indexContents.Replace(alias, sprite);
+                    newPath = Path.Combine(EXPORT_DIRECTORY, sprite, "index.xml");
+                    File.WriteAllText(newPath, indexContents);
+
                     indexContents = indexContents.Replace(sprite, alias);
                     newPath = Path.Combine(EXPORT_DIRECTORY, alias, "index.xml");
                     File.WriteAllText(newPath, indexContents);
